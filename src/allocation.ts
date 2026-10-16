@@ -5,6 +5,9 @@ const supplies_per_crew_member = 3;
 const supplies_consumed = 6;
 const default_crew_supplies = 2;
 const bar_scale = 14;
+const first_label_y = 102;
+const row_spacing = 52;
+const bar_offset = 8;
 
 type ShiftResults = {
   crewAssignedSupplies: number;
@@ -13,6 +16,17 @@ type ShiftResults = {
   consumption: number;
   balance: number;
 };
+
+type ReportRow = {
+  label: string;
+  valueField: "production" | "consumption";
+  barColor: string;
+};
+
+const reportRows: ReportRow[] = [
+  { label: "Production", valueField: "production", barColor: "#27766b" },
+  { label: "Consumption", valueField: "consumption", barColor: "#a44d23" },
+];
 
 const canvas = document.querySelector<HTMLCanvasElement>("#allocation-canvas")!;
 const ctx = canvas.getContext("2d")!;
@@ -52,6 +66,18 @@ function drawCrewRoster(crewAssignedSupplies: number) {
   }
 }
 
+function drawReportRows(results: ShiftResults) {
+  for (let rowIndex = 0; rowIndex < reportRows.length; rowIndex++) {
+    const row = reportRows[rowIndex];
+    const value = results[row.valueField];
+    const labelY = first_label_y + rowIndex * row_spacing;
+    ctx.fillStyle = "#233e43";
+    ctx.fillText(`${row.label}: ${value}`, 18, labelY);
+    ctx.fillStyle = row.barColor;
+    ctx.fillRect(18, labelY + bar_offset, value * bar_scale, 20);
+  }
+}
+
 function redraw() {
   const results = calculateShiftResults(crewSupplies);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -63,13 +89,7 @@ function redraw() {
     18,
     76,
   );
-  ctx.fillText(`Production: ${results.production}`, 18, 102);
-  ctx.fillStyle = "#27766b";
-  ctx.fillRect(18, 110, results.production * bar_scale, 20);
-  ctx.fillStyle = "#233e43";
-  ctx.fillText(`Consumption: ${results.consumption}`, 18, 154);
-  ctx.fillStyle = "#a44d23";
-  ctx.fillRect(18, 162, results.consumption * bar_scale, 20);
+  drawReportRows(results);
   readout.textContent =
     `Assigned: ${results.crewAssignedSupplies}/${results.crewSize} · Production: ${results.production} · Consumption: ${results.consumption} · Balance: ${
       formatBalance(results.balance)
