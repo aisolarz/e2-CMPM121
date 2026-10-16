@@ -27,6 +27,16 @@ const directions: Direction[] = [
 
 const grid_max = 4;
 
+const pendingCommands: Command[] = [];
+const pendingList = document.querySelector<HTMLElement>("#rover-pending")!;
+const queueStatus = document.querySelector<HTMLParagraphElement>(
+  "#rover-queue-status",
+)!;
+const runButton = document.querySelector<HTMLButtonElement>("#rover-run")!;
+const clearButton = document.querySelector<HTMLButtonElement>("#rover-clear")!;
+runButton.disabled = false;
+clearButton.disabled = false;
+
 function drawRover() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.strokeStyle = "#718881";
@@ -55,6 +65,18 @@ function moveWithinGrid(position: number, change: number): number {
   return Math.max(0, Math.min(grid_max, position + change));
 }
 
+function renderPending() {
+  pendingList.replaceChildren();
+  for (let index = 0; index < pendingCommands.length; index++) {
+    const item = document.createElement("li");
+    item.textContent = pendingCommands[index].label;
+    pendingList.append(item);
+  }
+  queueStatus.textContent = pendingCommands.length === 0
+    ? "Empty"
+    : `${pendingCommands.length} pending`;
+}
+
 const forwardCommand: Command = {
   label: "Forward",
   run: () => {
@@ -71,21 +93,39 @@ const rightCommand: Command = {
   },
 };
 
-function runCommand(command: Command) {
-  command.run();
-  drawRover();
+function enqueueCommand(command: Command) {
+  pendingCommands.push(command);
+  renderPending();
 }
 
 document.querySelector<HTMLButtonElement>("#rover-forward")!.onclick = () => {
-  runCommand(forwardCommand);
+  enqueueCommand(forwardCommand);
 };
 document.querySelector<HTMLButtonElement>("#rover-right")!.onclick = () => {
-  runCommand(rightCommand);
+  enqueueCommand(rightCommand);
 };
+
+runButton.onclick = () => {
+  for (let index = 0; index < pendingCommands.length; index++) {
+    pendingCommands[index].run();
+  }
+  pendingCommands.length = 0;
+  renderPending();
+  drawRover();
+};
+
+clearButton.onclick = () => {
+  pendingCommands.length = 0;
+  renderPending();
+};
+
 document.querySelector<HTMLButtonElement>("#rover-reset")!.onclick = () => {
   x = 2;
   y = 2;
   direction = 0;
+  pendingCommands.length = 0;
+  renderPending();
   drawRover();
 };
+renderPending();
 drawRover();
