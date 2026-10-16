@@ -13,6 +13,7 @@ let count = 0;
 let panel: HTMLParagraphElement | null = null;
 let panelUpdates = 0;
 const shield_capacity = 10;
+const shield_events = new EventTarget();
 
 type ShieldSnapshot = {
   charge: number;
@@ -57,10 +58,14 @@ function setCount(next: number) {
   const bounded = Math.max(0, Math.min(shield_capacity, next));
   if (bounded === count) return;
   count = bounded;
+  shield_events.dispatchEvent(new Event("shieldchange"));
   const snapshot = takeShieldSnapshot();
-  drawMeter(snapshot);
   if (panel) updateStats(snapshot);
 }
+
+shield_events.addEventListener("shieldchange", () => {
+  drawMeter(takeShieldSnapshot());
+});
 
 document.querySelector<HTMLButtonElement>("#counter-less")!.onclick = () => {
   setCount(count - 1);
